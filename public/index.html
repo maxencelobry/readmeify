@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readmeify — Spotify Readme Generator</title>
+<meta name="description" content="Display your currently playing Spotify track on your GitHub profile README.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='%231ed760'/></svg>">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<!-- data-state drives the loading / ready / error views, see style.css -->
+<body data-state="loading">
+
+<header class="site-header wrap">
+  <span class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+    </svg>
+    <span>Readmeify</span>
+  </span>
+  <a class="header-link" href="https://github.com/maxencelobry/readmeify" rel="noopener noreferrer" target="_blank">
+    <span aria-hidden="true">★</span> Star on GitHub</a>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <h1>Spotify Readme Generator</h1>
+    <p class="subtitle">Display your currently playing Spotify track on your GitHub profile.</p>
+    <p class="lede">Three steps, about a minute. You never have to hand over a Spotify client secret — the
+      connection runs through the app already registered on this server.</p>
+  </section>
+
+  <section class="preview">
+    <!-- Default card here, so it still shows without JS; app.js re-points it at
+         the saved appearance options. -->
+    <img id="demo-img" src="api/demo.svg" width="480" height="132" alt="Sample Spotify now playing card" class="card-img">
+    <p class="caption">Sample card — restyle it with the Appearance controls in step 3.</p>
+  </section>
+
+  <p id="banner" role="status" aria-live="polite" hidden></p>
+
+  <p id="loading" class="hint">Loading your status…</p>
+
+  <div id="load-error" class="card error-panel" role="alert">
+    <h2>Could not load your status</h2>
+    <p class="hint">The server did not answer. Check your connection and try again.</p>
+    <button type="button" id="btn-retry" class="btn btn-ghost">Retry</button>
+  </div>
+
+  <div id="app">
+
+    <ol class="steps" id="steps">
+      <li class="step" data-state="pending">
+        <span class="step-dot" aria-hidden="true">1</span>
+        <span class="step-label">GitHub connected</span>
+        <span class="step-state">Pending</span>
+      </li>
+      <li class="step" data-state="pending">
+        <span class="step-dot" aria-hidden="true">2</span>
+        <span class="step-label">Spotify connected</span>
+        <span class="step-state">Pending</span>
+      </li>
+      <li class="step" data-state="pending">
+        <span class="step-dot" aria-hidden="true">3</span>
+        <span class="step-label">Card ready</span>
+        <span class="step-state">Pending</span>
+      </li>
+    </ol>
+
+    <section class="card" id="step-github" aria-labelledby="h-github">
+      <h2 id="h-github"><span class="num">1</span> Sign in with GitHub</h2>
+
+      <div id="gh-disconnected">
+        <p class="hint">Your card lives at a URL built from your GitHub username, so we need to know who you are.</p>
+        <a class="btn btn-primary" href="auth/github">Connect with GitHub</a>
+      </div>
+
+      <div id="gh-connected" hidden>
+        <div class="identity">
+          <img id="gh-avatar" class="avatar" alt="" width="40" height="40">
+          <span id="gh-login" class="identity-name"></span>
+        </div>
+        <div class="actions">
+          <button type="button" id="btn-logout" class="btn btn-ghost">Sign out</button>
+          <button type="button" id="btn-delete" class="btn btn-danger">Delete my data</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="step-spotify" aria-labelledby="h-spotify">
+      <h2 id="h-spotify"><span class="num">2</span> Connect Spotify</h2>
+
+      <div id="sp-disconnected">
+        <p class="hint">Read-only access: the app only asks to see what you are currently listening to. It can
+          never play, pause or change anything on your account.</p>
+        <a class="btn btn-primary" id="link-spotify" href="auth/spotify">Connect Spotify</a>
+        <p class="hint warn" id="sp-need-github">Finish step 1 first — this button unlocks once you are signed in with GitHub.</p>
+        <p class="hint warn" id="sp-no-app" hidden>This server has no shared Spotify app configured. Register your own below.</p>
+      </div>
+
+      <div id="sp-connected" hidden>
+        <div class="identity">
+          <span class="dot-live" aria-hidden="true"></span>
+          <span id="sp-name" class="identity-name"></span>
+        </div>
+        <div class="actions">
+          <button type="button" id="btn-sp-disconnect" class="btn btn-ghost">Disconnect Spotify</button>
+        </div>
+      </div>
+
+      <details id="byo" class="byo" hidden>
+        <summary>Use my own Spotify app (advanced)</summary>
+
+        <p class="hint">A Spotify app in Development Mode can only serve 25 users until Spotify grants Extended
+          Quota. If the shared app is full, register your own — it takes two minutes and lifts the cap for you.</p>
+        <p class="hint" id="byo-mode"></p>
+
+        <ol class="howto">
+          <li>Open <a href="https://developer.spotify.com/dashboard" rel="noopener noreferrer" target="_blank">developer.spotify.com/dashboard</a> and click <b>Create app</b>.</li>
+          <li>Give it any name and description. Tick the Web API checkbox.</li>
+          <li>Paste the Redirect URI below into <b>Redirect URIs</b>, click Add, then Save.</li>
+          <li>Open the app, go to <b>Settings</b>, and copy the Client ID and the client secret.</li>
+          <li>Paste both here, save, then connect Spotify again above.</li>
+        </ol>
+
+        <label class="field" for="byo-redirect">Redirect URI</label>
+        <div class="row">
+          <!-- textarea, not input: the whole point is that the value can be read
+               and compared character for character, including on a phone. -->
+          <textarea id="byo-redirect" rows="2" readonly spellcheck="false" autocomplete="off"></textarea>
+          <button type="button" id="btn-copy-redirect" class="btn btn-ghost btn-small">Copy</button>
+        </div>
+        <p class="hint">Must match character for character, including the scheme and the port.</p>
+
+        <form id="byo-form" novalidate>
+          <label class="field" for="byo-id">Spotify Client ID</label>
+          <input type="text" id="byo-id" required autocomplete="off" spellcheck="false" inputmode="latin"
+                 maxlength="32" placeholder="32 hexadecimal characters">
+          <p class="hint">Dashboard → your app → Settings → <b>Client ID</b>. 32 characters, digits and a–f only.</p>
+
+          <label class="field" for="byo-secret">Spotify Client Secret</label>
+          <input type="password" id="byo-secret" required autocomplete="off" spellcheck="false" maxlength="128"
+                 placeholder="••••••••••••••••••••••••••••••••">
+          <p class="hint">Same page, under <b>View client secret</b>. It is encrypted with AES-256-GCM before it
+            touches the database and is never sent back to the browser.</p>
+
+          <p id="byo-error" class="hint warn" role="alert" hidden></p>
+
+          <div class="actions">
+            <button type="submit" id="btn-byo-save" class="btn btn-primary">Save my app</button>
+            <button type="button" id="btn-byo-shared" class="btn btn-ghost" hidden>Use the shared app instead</button>
+          </div>
+        </form>
+      </details>
+    </section>
+
+    <section class="card" id="step-result" aria-labelledby="h-result">
+      <h2 id="h-result"><span class="num">3</span> Copy it into your README</h2>
+
+      <p class="hint" id="result-hint">Finish steps 1 and 2 — your card and its snippet appear here.</p>
+
+      <img id="card-img" class="card-img" width="480" height="132" alt="Your live Spotify card" hidden>
+
+      <!-- Usable before sign-in: the same controls drive the sample card at the
+           top of the page until a real card exists. -->
+      <div class="appearance" role="group" aria-labelledby="h-appearance">
+        <h3 id="h-appearance">Appearance</h3>
+
+        <div class="opt">
+          <span id="l-theme">Theme</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="l-theme">
+            <input type="radio" name="theme" id="opt-theme-dark" value="dark" checked>
+            <label for="opt-theme-dark">Dark</label>
+            <input type="radio" name="theme" id="opt-theme-light" value="light">
+            <label for="opt-theme-light">Light</label>
+          </div>
+        </div>
+
+        <div class="opt">
+          <label for="opt-accent">Accent colour</label>
+          <span class="accent-controls">
+            <span class="swatches">
+              <button type="button" class="swatch sw-a" data-accent="1ed760" aria-label="Spotify green"></button>
+              <button type="button" class="swatch sw-b" data-accent="38bdf8" aria-label="Sky blue"></button>
+              <button type="button" class="swatch sw-c" data-accent="a78bfa" aria-label="Violet"></button>
+              <button type="button" class="swatch sw-d" data-accent="fb7185" aria-label="Rose"></button>
+              <button type="button" class="swatch sw-e" data-accent="fbbf24" aria-label="Amber"></button>
+            </span>
+            <input type="color" id="opt-accent" value="#1ed760">
+          </span>
+        </div>
+
+        <div class="opt">
+          <label for="opt-spin">Spinning disc</label>
+          <input type="checkbox" id="opt-spin" class="switch">
+        </div>
+
+        <div class="opt">
+          <label for="opt-progress">Progress bar</label>
+          <input type="checkbox" id="opt-progress" class="switch" checked>
+        </div>
+
+        <div class="opt">
+          <label for="opt-equalizer">Equalizer</label>
+          <input type="checkbox" id="opt-equalizer" class="switch" checked>
+        </div>
+
+        <div class="opt">
+          <label for="opt-ticker">Live time</label>
+          <input type="checkbox" id="opt-ticker" class="switch" aria-describedby="ticker-hint" checked>
+        </div>
+        <p class="hint opt-hint" id="ticker-hint">The elapsed time counts up second by second in the README itself.</p>
+
+        <p class="hint" id="preview-status" role="status" aria-live="polite" hidden></p>
+
+        <button type="button" id="opt-reset" class="btn-link">Reset to defaults</button>
+      </div>
+
+      <pre id="card-md" hidden><code id="card-md-code"></code></pre>
+
+      <div class="actions">
+        <button type="button" id="btn-copy-md" class="btn btn-primary" disabled>Copy Markdown</button>
+        <button type="button" id="btn-copy-html" class="btn btn-ghost" disabled>Copy HTML</button>
+        <button type="button" id="btn-refresh" class="btn btn-ghost" disabled>Refresh preview</button>
+      </div>
+
+      <p class="hint" id="readme-hint" hidden>Paste it into the <code>README.md</code> of the repository named
+        <code id="repo-name"></code> — that is the one GitHub shows on your profile.</p>
+
+      <!-- Shown only once a card exists: asking at the moment it worked, not before. -->
+      <div class="star-cta" id="star-cta" hidden>
+        <p>Enjoying your card? A star is how the next person finds this.</p>
+        <a class="btn btn-star" href="https://github.com/maxencelobry/readmeify" rel="noopener noreferrer" target="_blank">
+          <span aria-hidden="true">★</span> Star on GitHub</a>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="wrap site-footer">
+  <p><a href="https://github.com/maxencelobry/readmeify" rel="noopener noreferrer" target="_blank">Readmeify is open source — star it on GitHub</a></p>
+  <p class="hint">Stored: your GitHub id, username and avatar URL, plus a Spotify refresh token encrypted at rest.
+    Nothing else — no listening history, no play counts, no analytics.</p>
+</footer>
+
+</body>
+</html>

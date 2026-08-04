@@ -1,0 +1,20 @@
+{
+  "name": "readmeify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generate a dynamic Spotify now-playing card for your GitHub profile README.",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0"
+  }
+}
